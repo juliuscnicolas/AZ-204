@@ -14,8 +14,8 @@ namespace SQLFunction
 {
     public static class GetProduct
     {
-        [FunctionName("GetProduct")]
-        public static async Task<IActionResult> Run(
+        [FunctionName("GetProducts")]
+        public static IActionResult RunProducts(
             [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req,
             ILogger log)
         {
@@ -60,6 +60,48 @@ namespace SQLFunction
         {
             string connectionString = "Data Source=localhost;Initial Catalog=AZ204;Integrated Security=True";
             return new SqlConnection(connectionString);
+        }
+
+        [FunctionName("GetProduct")]
+        public static IActionResult RunProduct(
+           [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req,
+           ILogger log)
+        {
+
+
+            int ProductID = int.Parse(req.Query["Id"]);
+
+            string _statement = String.Format("SELECT ProductID,ProductName,Quantity from Products WHERE ProductID={0}", ProductID);
+            SqlConnection _connection = GetConnection();
+
+            _connection.Open();
+
+            SqlCommand _sqlcommand = new SqlCommand(_statement, _connection);
+            Product _product = new Product();
+
+            try
+            {
+                using (SqlDataReader _reader = _sqlcommand.ExecuteReader())
+                {
+                    _reader.Read();
+                    _product.ProductId = _reader.GetInt32(0);
+                    _product.ProductName = _reader.GetString(1);
+                    _product.Quantity = _reader.GetInt32(2);
+                    var response = _product;
+
+                    _connection.Close();
+
+                    return new OkObjectResult(response);
+                }
+            }
+            catch (Exception ex)
+            {
+                var response = "No Records found";
+                return new OkObjectResult(response);
+            }
+            
+
+
         }
     }
 
